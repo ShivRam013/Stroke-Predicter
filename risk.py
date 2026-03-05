@@ -1,52 +1,44 @@
-from flask import Flask, render_template, request
+import streamlit as st
 import pandas as pd
 import pickle
 
-app = Flask(__name__)
 dataset = pd.read_csv("dataset.csv")
 
 with open("stroke_model.pkl", "rb") as f:
     model = pickle.load(f)
 
+st.title("Stroke Risk Prediction")
 
-@app.route("/")
-def index():
-    return render_template("index.html",
-        genders=sorted(dataset["gender"].unique()),
-        ages=sorted(dataset["age"].unique()),
-        hypertensions=sorted(dataset["hypertension"].unique()),
-        heart_diseases=sorted(dataset["heart_disease"].unique()),
-        ever_marrieds=sorted(dataset["ever_married"].unique()),
-        work_types=sorted(dataset["work_type"].unique()),
-        Residence_types=sorted(dataset["Residence_type"].unique()),
-        avg_glucose_levels=sorted(dataset["avg_glucose_level"].unique()),
-        smoking_statuss=sorted(dataset["smoking_status"].unique())
-    )
+gender = st.selectbox("Gender", sorted(dataset["gender"].unique()))
+age = st.number_input("Age", min_value=0, max_value=120)
+hypertension = st.selectbox("Hypertension", sorted(dataset["hypertension"].unique()))
+heart_disease = st.selectbox("Heart Disease", sorted(dataset["heart_disease"].unique()))
+ever_married = st.selectbox("Ever Married", sorted(dataset["ever_married"].unique()))
+work_type = st.selectbox("Work Type", sorted(dataset["work_type"].unique()))
+Residence_type = st.selectbox("Residence Type", sorted(dataset["Residence_type"].unique()))
+avg_glucose_level = st.number_input("Average Glucose Level")
+smoking_status = st.selectbox("Smoking Status", sorted(dataset["smoking_status"].unique()))
 
-
-@app.route("/predict", methods=["POST"])
-def predict():
+if st.button("Predict"):
     data = {
-        "gender": request.form["gender"],
-        "age": float(request.form["age"]),
-        "hypertension": int(request.form["hypertension"]),
-        "heart_disease": int(request.form["heart_disease"]),
-        "ever_married": request.form["ever_married"],
-        "work_type": request.form["work_type"],
-        "Residence_type": request.form["Residence_type"],
-        "avg_glucose_level": float(request.form["avg_glucose_level"]),
-        "smoking_status": request.form["smoking_status"]
+        "gender": gender,
+        "age": age,
+        "hypertension": hypertension,
+        "heart_disease": heart_disease,
+        "ever_married": ever_married,
+        "work_type": work_type,
+        "Residence_type": Residence_type,
+        "avg_glucose_level": avg_glucose_level,
+        "smoking_status": smoking_status
     }
 
     df = pd.DataFrame([data])
     prediction = model.predict(df)[0]
 
-    result = "Stroke Risk" if prediction == 1 else "No Stroke Risk"
-    return str(result)
-
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    if prediction == 1:
+        st.error("Stroke Risk")
+    else:
+        st.success("No Stroke Risk")
 
 
 
